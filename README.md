@@ -73,7 +73,7 @@ Jalankan ulang manual:
 
 `--host 0.0.0.0` wajib: default `127.0.0.1` tidak terjangkau dari proxy Codespace.
 
-Mesin 4-core/16 GB dipakai karena 2-core/8 GB.bsbj pernah kehabisan memori saat memuat
+Mesin 4-core/16 GB dipakai karena 2-core/8 GB pernah kehabisan memori saat memuat
 dua checkpoint. `LAYA_MAX_LOADED=1` juga membatasi hanya satu checkpoint resident.
 
 ### GitHub Pages
