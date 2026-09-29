@@ -1,0 +1,61 @@
+name: Keep playground alive
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: null
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-alive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Probe playground
+        id: probe
+        run: |
+          set -uo pipefail
+          code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$PLAYGROUND_URL/health" || echo 000)
+          echo "http=$code"
+          if [ "$code" = "200" ]; then
+            echo "alive=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "alive=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          PLAYGROUND_URL: ${{ vars.PLAYGROUND_URL }}
+
+      - name: Start codespace
+        if: steps.probe.outputs.alive == 'false'
+        run: |
+          set -uo pipefail
+          echo "playground mati, menyalakan codespace $CODESPACE_NAME"
+          gh api -X POST "repos/${{ github.repository }}/codespaces/$CODESPACE_NAME/start" \
+            --jq '.state' || echo "start gagal, cek nama codespace"
+        env:
+          CODESPACE_NAME: ${{ vars.CODESPACE_NAME }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for health
+        if: steps.probe.outputs.alive == 'false'
+        run: |
+          set -uo pipefail
+          for i in $(seq 1 40); do
+            sleep 30
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$PLAYGROUND_URL/health" || echo 000)
+            echo "percobaan $i: http=$code"
+            if [ "$code" = "200" ]; then
+              echo "sudah hidup setelah $((i * 30)) detik"
+              exit 0
+            fi
+          done
+          echo "masih mati setelah 20 menit" >&2
+          exit 1
+        env:
+          PLAYGROUND_URL: ${{ vars.PLAYGROUND_URL }}
