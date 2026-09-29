@@ -17,21 +17,28 @@ if [ -f server.pid ]; then
   kill "$(cat server.pid)" 2>/dev/null || true
   rm -f server.pid
 fi
-pkill -f "app.py --host 0.0.0.0" 2>/dev/null || true
+pkill -f "app[.]py --host 0.0.0.0" 2>/dev/null || true
 sleep 1
 
-supervise() {
-  trap 'kill 0' TERM INT
+nohup bash -c '
+  cd "'"$PWD"'"
+  trap "kill 0" TERM INT
   while true; do
-    "$PY" app.py --host 0.0.0.0 --port 8000 --device cpu >> server.log 2>&1
+    .venv/bin/python app.py --host 0.0.0.0 --port 8000 --device cpu >> server.log 2>&1
     echo "--- server keluar, restart dalam 5 detik ---" >> server.log
     sleep 5
   done
-}
+' >> supervisor.log 2>&1 &
 
-nohup supervise >/dev/null 2>&1 &
 echo $! > server.pid
-echo "supervisor pid $(cat server.pid), log di server.log"
+sleep 2
+
+if ! kill -0 "$(cat server.pid)" 2>/dev/null; then
+  echo "supervisor langsung mati, lihat supervisor.log dan server.log" >&2
+  exit 1
+fi
+
+echo "supervisor pid $(cat server.pid)"
 
 for _ in $(seq 1 90); do
   if curl -sf -m 5 http://127.0.0.1:8000/health >/dev/null 2>&1; then
@@ -41,5 +48,5 @@ for _ in $(seq 1 90); do
   sleep 2
 done
 
-echo "server tidak merespons dalam 180 detik, lihat server.log" >&2
+echo "server tidak merespons dalam 180 detik, lihat supervisor.log" >&2
 exit 1
