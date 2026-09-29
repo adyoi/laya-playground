@@ -9,6 +9,8 @@ env/
 # Artefak runtime
 .run/
 *.log
+*.pid
+warmup.json
 
 # Model & cache
 *.bin

@@ -33,7 +33,7 @@ FILES = ['docs/index.html', 'static/index.html']
 bad = []
 roots = {}
 
-TITLE = 'Laya Example &middot; typed decisions engine'
+TITLE = 'Laya Playground &middot; typed decisions engine'
 
 for path in FILES:
     text = pathlib.Path(path).read_text(encoding='utf-8')
