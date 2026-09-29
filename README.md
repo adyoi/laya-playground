@@ -358,8 +358,8 @@ resident supaya RAM tidak habis.
 .\.venv\Scripts\python.exe smoke_test.py         # semua preset, ±15 menit di CPU
 ```
 
-`lint_docs.py` dan `unit_test.py` tidak butuh server maupun checkpoint — jalankan kapan
-saja. Dua file lainnya butuh server hidup di port 8000.
+`lint_docs.py` dan `unit_test.py` tidak butuh server hidup maupun checkpoint — jalankan
+saat saja. Dua file lainnya butuh server hidup di port 8000.
 
 `lint_docs.py` adalah penjaga "satu tema": ia gagal kalau blok `:root` di
 `docs/index.html` dan `static/index.html` berbeda, kalau title keduanya tidak sama,
@@ -369,11 +369,14 @@ kalau ada `var()` tanpa definisi, kalau ada karakter CJK/kerushu yang tidak seng
 ### CI
 
 `.github/workflows/test.yml` menjalankan `lint_docs.py` dan `unit_test.py` di setiap push
-dan pull request. Keduanya tidak butuh model, jadi runner standar cukup.
+dan pull request. `unit_test.py` mengimpor `app.py` supaya bisa menguji
+`_normalize_score_questions`, jadi job ini memasang `requirements.txt` penuh — torch
+sebesar ~200 MB membuat job naik ke 3–5 menit. Modelnya sendiri tidak pernah diunduh,
+jadi RAM runner standar cukup.
 
 `feature_test.py` dan `smoke_test.py` sengaja tidak masuk CI: keduanya butuh checkpoint
-laya yang diunduh (~1 GB) dan butuh 10–15 menit di CPU. Runner GitHub juga tidak punya
-RAM untuk `LAYA_MAX_LOADED` yang aman. Jalankan manual, atau andalkan Codespace.
+laya (~1 GB) dan 10–15 menit di CPU, sedangkan runner GitHub tidak punya RAM untuk
+`LAYA_MAX_LOADED` yang aman. Jalankan manual, atau andalkan Codespace.
 
 ## Status verifikasi
 
