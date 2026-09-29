@@ -72,6 +72,7 @@ laya-playground/
 ├── smoke_test.py         Test semua preset bawaan + validasi
 ├── lint_docs.py          Konsistensi tema HTML: token sama, title sama, tag balance
 ├── .devcontainer/         Codespace: devcontainer.json, setup.sh, start.sh, supervise.sh
+├── .github/workflows/     CI test + keep-alive Codespace
 ├── requirements.txt      Dependensi runtime
 ├── requirements-test.txt httpx, hanya untuk file test
 └── LICENSE               ISC
@@ -365,6 +366,15 @@ saja. Dua file lainnya butuh server hidup di port 8000.
 kalau ada `var()` tanpa definisi, kalau ada karakter CJK/kerushu yang tidak sengaja
  tertinggal, atau kalau ada tag HTML yang tidak balance.
 
+### CI
+
+`.github/workflows/test.yml` menjalankan `lint_docs.py` dan `unit_test.py` di setiap push
+dan pull request. Keduanya tidak butuh model, jadi runner standar cukup.
+
+`feature_test.py` dan `smoke_test.py` sengaja tidak masuk CI: keduanya butuh checkpoint
+laya yang diunduh (~1 GB) dan butuh 10–15 menit di CPU. Runner GitHub juga tidak punya
+RAM untuk `LAYA_MAX_LOADED` yang aman. Jalankan manual, atau andalkan Codespace.
+
 ## Status verifikasi
 
 Semua hijau pada laya 0.3.20 / torch 2.14.0+cpu:
@@ -408,8 +418,9 @@ Question `triage` adalah `intent`, `is_urgent`, `frustration`, `refund_requested
    `href="/predict"` supaya URL bisa disalin, tapi endpoint-nya POST-only dan klik
    di-`preventDefault`. Membuka link di tab baru menghasilkan 405.
 4. **Belum layak produksi di CPU.** 13–30 detik per request setelah warm. Butuh GPU.
-5. **Belum ada CI.** Ketiga file test dijalankan manual; `lint_docs.py` untuk
-   konsistensi tema HTML ada di `.run/` dan belum dipindahkan ke repo.
+5. **`feature_test.py` dan `smoke_test.py` belum jalan di CI.** Keduanya butuh
+   checkpoint (~1 GB) dan 10–15 menit di CPU, sedangkan runner GitHub tidak punya RAM
+   untuk itu. `lint_docs.py` dan `unit_test.py` sudah jalan di `test.yml`.
 6. **Belum diimplementasi**: `laya[fast]`, `laya[onnx]`, MCP, adapter LangChain — lihat
    bagian Extras.
 7. **`predict_long` tidak ada di 0.3.20** meski didokumentasikan di README upstream
