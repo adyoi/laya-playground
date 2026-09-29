@@ -19,8 +19,8 @@ for _ in $(seq 1 60); do
   sleep 2
 done
 
-nohup bash -c 'curl -sf -X POST http://127.0.0.1:8000/predict \
+nohup bash -c 'curl -sf -X POST http://127.0.0.1:8000/structured/decide \
   -H "Content-Type: application/json" \
-  -d "{\"preset\":\"triage\",\"state\":\"Saya mau refund pesanan saya\"}" \
+  -d "{\"state\":\"Pembayaran invoice tertunda karena rekening bank berubah.\",\"questions\":{\"action\":{\"type\":\"choice\",\"instructions\":\"What action does the finance team need to take?\",\"criteria\":{\"hold_payment\":\"verify the vendor or the bank details first\",\"pay_now\":\"the invoice is correct, pay it\",\"dispute\":\"the invoice amount or contents are wrong\",\"no_action\":\"nothing to do\"}},\"fraud_suspected\":{\"type\":\"noul\",\"instructions\":\"Is there a sign of fraud, such as changed bank details?\"}}}" \
   > warmup.json 2>&1' >/dev/null 2>&1 &
-echo "warmup jalan di background, unduh checkpoint di ./warmup.json"
+echo "warmup jalan di background, unduh checkpoint ke ./warmup.json"

@@ -11,7 +11,19 @@ System 1 decision engine*. Satu forward pass menjawab banyak pertanyaan **typed*
 (`choice`, `score`, `noul`) atas state apa pun — teks, email, tiket, atau dokumen JSON —
 tanpa text generation, jadi tidak ada parsing dan tidak ada hallucination.
 
-Halaman demo (GitHub Pages): <https://adyoi.github.io/laya-playground/>
+| Halaman | URL |
+|---|---|
+| **Playground (live, API jalan)** | <https://laya-playground-jvrv57wjrcpp57-8000.app.github.dev> |
+| Dokumentasi (GitHub Pages, statis) | <https://adyoi.github.io/laya-playground/> |
+
+Playground butuh proses FastAPI di belakang, jadi tidak bisa hidup di GitHub Pages. Yang di
+hosting di Codespace dengan port 8000 dibuat `public`; dokumentasinya tetap|Pages supaya
+tetap hidup tanpa server.
+
+> **Codespace auto-stop.** GitHub mematikan Codespace yang idle, dan URL publik ikut mati
+> begitu prosesnya berhenti. Kalau URL tidak merespons, buka lagi lewat
+> **Code → Codespaces → laya-playground → Start**. Untuk uptime panjang, ubah *retention*
+> di Settings Codespace ke always-on (berbayar).
 
 ## Identitas repo GitHub
 
@@ -21,6 +33,7 @@ Halaman demo (GitHub Pages): <https://adyoi.github.io/laya-playground/>
 | **Deskripsi** | Example web app for laya, a non-autoregressive decision engine. One forward pass answers typed questions (choice / score / noul) over any state — no text generation, no parsing, no hallucination. FastAPI playground with JSON-Schema output, PII redaction, guardrails, and multi-checkpoint language routing. |
 | **Topics** | `laya` `non-autoregressive` `decision-engine` `structured-output` `fastapi` `pydantic` `pii-redaction` `guardrails` `nlp` |
 | **Lisensi** | ISC — lihat [`LICENSE`](LICENSE) |
+| **Hosting** | Codespace (API) + GitHub Pages (dokumentasi) |
 
 Deskripsi memakai bahasa Inggris karena audiens GitHub jauh lebih luas; narasi README tetap
 bahasa Indonesia. Panjangnya 339 dari batas 350 karakter GitHub.
@@ -39,10 +52,29 @@ laya-playground/
 ├── feature_test.py       Test end-to-end endpoint baru
 ├── smoke_test.py         Test semua preset bawaan + validasi
 ├── lint_docs.py          Konsistensi tema HTML: token sama, title sama, tag balance
+├── .devcontainer/         Codespace: devcontainer.json + setup.sh
 ├── requirements.txt      Dependensi runtime
 ├── requirements-test.txt httpx, hanya untuk file test
 └── LICENSE               ISC
 ```
+
+### Codespace
+
+`.devcontainer/setup.sh` berjalan otomatis saat Codespace dibuat: membuat `.venv`,
+ memasang dependensi, menjalankan server di `0.0.0.0:8000`, lalu memanaskan checkpoint di
+background supaya pengunjung pertama tidak menunggu unduhan model. Port 8000 sudah
+di-declare sebagai `forwardPorts`.
+
+Jalankan ulang manual:
+
+```bash
+.venv/bin/python app.py --host 0.0.0.0 --port 8000 --device cpu
+```
+
+`--host 0.0.0.0` wajib: default `127.0.0.1` tidak terjangkau dari proxy Codespace.
+
+Mesin 4-core/16 GB dipakai karena 2-core/8 GB.bsbj pernah kehabisan memori saat memuat
+dua checkpoint. `LAYA_MAX_LOADED=1` juga membatasi hanya satu checkpoint resident.
 
 ### GitHub Pages
 
