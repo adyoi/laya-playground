@@ -14,36 +14,16 @@ if curl -sf -m 5 http://127.0.0.1:8000/health >/dev/null 2>&1; then
 fi
 
 if [ -f server.pid ]; then
-  kill -TERM -"$(cat server.pid)" 2>/dev/null || kill "$(cat server.pid)" 2>/dev/null || true
+  pid="$(cat server.pid)"
+  kill -TERM -"$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
   rm -f server.pid
   sleep 2
 fi
 
-ROOT="$PWD"
-RUN="setsid"
-command -v setsid >/dev/null 2>&1 || RUN=""
+RUN=""
+command -v setsid >/dev/null 2>&1 && RUN="setsid"
 
-nohup $RUN bash -c '
-  cd "'"$ROOT"'"
-  APP="app.py"
-  BIND="--host 0.0.0.0"
-  P="--port 8000"
-  DEV="--device cpu"
-  child=""
-  stop() {
-    [ -n "$child" ] && kill "$child" 2>/dev/null
-    exit 0
-  }
-  trap stop TERM INT
-  while true; do
-    .venv/bin/python "$APP" "$BIND" "$P" "$DEV" >> server.log 2>&1 &
-    child=$!
-    wait "$child"
-    echo "--- server keluar, restart dalam 5 detik ---" >> server.log
-    sleep 5
-  done
-' >> supervisor.log 2>&1 &
-
+nohup $RUN bash .devcontainer/supervise.sh >> supervisor.log 2>&1 &
 echo $! > server.pid
 sleep 3
 
