@@ -1,0 +1,15 @@
+# Runtime
+laya[serve]>=0.3.20
+uvicorn>=0.30
+fastapi>=0.110
+
+# Optional extras, installed on demand:
+#   laya[fast]      GPU fast path from fused TileLang kernels. Needs a CUDA GPU.
+#   laya[onnx]      ONNX Runtime instead of PyTorch, for smaller CPU deployments.
+#   laya[langchain] LangChain/LangGraph adapters (LayaTriage, LayaRouter,
+#                   LayaEvaluator, embed_fn_from_agent). LayaGuardrail works
+#                   without it; only the Runnable integration is disabled.
+#   laya[mcp]       MCP server binary.
+#
+# Do not install laya[langchain] on a machine that cannot spare the memory:
+# it pulls in the full langchain-core stack on top of torch + transformers.

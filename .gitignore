@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Artefak runtime
+.run/
+*.log
+
+# Model & cache
+*.bin
+*.pt
+*.safetensors
+.cache/
+.hf_cache/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
