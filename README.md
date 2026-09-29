@@ -20,10 +20,29 @@ Playground butuh proses FastAPI di belakang, jadi tidak bisa hidup di GitHub Pag
 hosting di Codespace dengan port 8000 dibuat `public`; dokumentasinya tetap|Pages supaya
 tetap hidup tanpa server.
 
-> **Codespace auto-stop.** GitHub mematikan Codespace yang idle, dan URL publik ikut mati
-> begitu prosesnya berhenti. Kalau URL tidak merespons, buka lagi lewat
-> **Code → Codespaces → laya-playground → Start**. Untuk uptime panjang, ubah *retention*
-> di Settings Codespace ke always-on (berbayar).
+> **Auto-stop.** Codespace ini punya *idle timeout* 30 menit. Setelah idle, GitHub
+> mematikannya dan URL publik ikut mati. Ada dua lapis perlindungan:
+>
+> 1. `postStartCommand` menjalankan `start.sh` setiap kali container hidup, dan
+>    `supervise.sh` menyalakan ulang aplikasi kalau prosesnya mati. Ini menutup crash dan
+>    restart container.
+> 2. Workflow `keep-alive.yml` memanggil endpoint `/health` tiap 15 menit. Kalau mati, ia
+>    menyalakan codespace lagi lewat API dan menunggu sampai `/health` 200.
+>
+> Yang **tidak** bisa ditutup workflow: setiap codespace di-*stop* lalu *start*, port 8000
+> kembali jadi `private`. GitHub mengelola itu lewat dev tunnels API
+> (`tunnels.api.visualstudio.com`), bukan REST API, jadi Actions tidak bisa mengaturnya.
+> Akibatnya setelah bangun dari tidur you'll sering melihat 404.
+>
+> **Perbaikan manual** (beberapa detik):
+>
+> ```powershell
+> gh codespace ports visibility -c laya-playground-jvrv57wjrcpp57 8000:public
+> ```
+>
+> Satu-satunya cara menutup celah ini sepenuhnya adalah mengubah *retention period* di
+> **Settings → Codespaces** dari "stop after idle" ke always-on. Itu berbayar, dan jauh lebih
+> murah daripada membiarkan mesin 4-core/16 GB menyala terus.
 
 ## Identitas repo GitHub
 
@@ -52,7 +71,7 @@ laya-playground/
 ├── feature_test.py       Test end-to-end endpoint baru
 ├── smoke_test.py         Test semua preset bawaan + validasi
 ├── lint_docs.py          Konsistensi tema HTML: token sama, title sama, tag balance
-├── .devcontainer/         Codespace: devcontainer.json + setup.sh
+├── .devcontainer/         Codespace: devcontainer.json, setup.sh, start.sh, supervise.sh
 ├── requirements.txt      Dependensi runtime
 ├── requirements-test.txt httpx, hanya untuk file test
 └── LICENSE               ISC
@@ -68,8 +87,14 @@ di-declare sebagai `forwardPorts`.
 Jalankan ulang manual:
 
 ```bash
-.venv/bin/python app.py --host 0.0.0.0 --port 8000 --device cpu
+bash .devcontainer/start.sh
 ```
+
+`start.sh` aman dipanggil berulang kali: kalau server sudah hidup dia keluar tanpa
+melakukan apa-apa, kalau belum dia menyalakan `supervise.sh` yang menjaga aplikasi tetap
+hidup dan me-restart-nya kalau keluar. `postStartCommand` memanggilnya otomatis setiap
+container hidup. `postCreateCommand` (install dependensi) hanya jalan sekali saat codespace
+dibuat.
 
 `--host 0.0.0.0` wajib: default `127.0.0.1` tidak terjangkau dari proxy Codespace.
 

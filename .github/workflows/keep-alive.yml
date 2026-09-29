@@ -56,6 +56,10 @@ jobs:
             fi
           done
           echo "masih mati setelah 20 menit" >&2
+          echo "codespace sudah dinyalakan, tapi port 8000 kembali jadi private." >&2
+          echo "port visibility diatur lewat dev tunnels API, tidak bisa diubah dari Actions." >&2
+          echo "perbaiki manual: gh codespace ports visibility -c $CODESPACE_NAME 8000:public" >&2
           exit 1
         env:
           PLAYGROUND_URL: ${{ vars.PLAYGROUND_URL }}
+          CODESPACE_NAME: ${{ vars.CODESPACE_NAME }}
