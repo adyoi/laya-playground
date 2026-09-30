@@ -2,7 +2,7 @@ name: Keep playground alive
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '13,28,43,58 * * * *'
   workflow_dispatch: null
 
 permissions:
@@ -15,7 +15,7 @@ concurrency:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 12
     steps:
       - name: Probe playground
         id: probe
@@ -23,21 +23,39 @@ jobs:
           set -uo pipefail
           code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$PLAYGROUND_URL/health" || echo 000)
           echo "http=$code"
-          if [ "$code" = "200" ]; then
-            echo "alive=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "alive=false" >> "$GITHUB_OUTPUT"
-          fi
+          case "$code" in
+            200)
+              echo "alive=true" >> "$GITHUB_OUTPUT"
+              echo "visibility=public" >> "$GITHUB_OUTPUT"
+              ;;
+            302)
+              echo "alive=true" >> "$GITHUB_OUTPUT"
+              echo "visibility=private" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "alive=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
         env:
           PLAYGROUND_URL: ${{ vars.PLAYGROUND_URL }}
+
+      - name: Report private port
+        if: steps.probe.outputs.alive == 'true' && steps.probe.outputs.visibility == 'private'
+        run: |
+          set -uo pipefail
+          echo "codespace hidup, port 8000 private."
+          echo "pengunjung anonim tetap bisa masuk lewat halaman peringatan sekali klik."
+          echo "mengubah ke public: gh codespace ports visibility -c $CODESPACE_NAME 8000:public"
+        env:
+          CODESPACE_NAME: ${{ vars.CODESPACE_NAME }}
 
       - name: Start codespace
         if: steps.probe.outputs.alive == 'false'
         run: |
           set -uo pipefail
           echo "playground mati, menyalakan codespace $CODESPACE_NAME"
-          gh api -X POST "repos/${{ github.repository }}/codespaces/$CODESPACE_NAME/start" \
-            --jq '.state' || echo "start gagal, cek nama codespace"
+          gh api -X POST "user/codespaces/$CODESPACE_NAME/start" --jq '.state' \
+            || echo "start gagal, cek nama codespace"
         env:
           CODESPACE_NAME: ${{ vars.CODESPACE_NAME }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,18 +64,17 @@ jobs:
         if: steps.probe.outputs.alive == 'false'
         run: |
           set -uo pipefail
-          for i in $(seq 1 40); do
-            sleep 30
-            code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$PLAYGROUND_URL/health" || echo 000)
+          for i in $(seq 1 18); do
+            sleep 20
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 15 "$PLAYGROUND_URL/health" || echo 000)
             echo "percobaan $i: http=$code"
-            if [ "$code" = "200" ]; then
-              echo "sudah hidup setelah $((i * 30)) detik"
+            if [ "$code" = "200" ] || [ "$code" = "302" ]; then
+              echo "sudah hidup setelah $((i * 20)) detik"
               exit 0
             fi
           done
-          echo "masih mati setelah 20 menit" >&2
-          echo "codespace sudah dinyalakan, tapi port 8000 kembali jadi private." >&2
-          echo "port visibility diatur lewat dev tunnels API, tidak bisa diubah dari Actions." >&2
+          echo "masih mati setelah 6 menit" >&2
+          echo "port visibility tidak bisa diubah dari Actions." >&2
           echo "perbaiki manual: gh codespace ports visibility -c $CODESPACE_NAME 8000:public" >&2
           exit 1
         env:
