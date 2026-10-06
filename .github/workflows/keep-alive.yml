@@ -89,8 +89,9 @@ jobs:
         run: |
           set -uo pipefail
           echo "codespace hidup, port 8000 private."
-          echo "pengunjung anonim tetap bisa masuk lewat halaman peringatan sekali klik."
-          echo "mengubah ke public: gh codespace ports visibility -c $CODESPACE_NAME 8000:public"
+          echo "PERUBAHAN GITHUB: port private sekarang butuh login + akses codespace (bukan warning page)."
+          echo "Domain utama (public) tetap bisa diakses anon: https://laya-playground-jvrv57wjrcpp57.github.dev"
+          echo "Auto-fix dicoba di step 'Try make port public' via secret GH_PAT_CODESPACE."
         env:
           CODESPACE_NAME: ${{ vars.CODESPACE_NAME }}
 

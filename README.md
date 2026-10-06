@@ -11,14 +11,15 @@ System 1 decision engine*. Satu forward pass menjawab banyak pertanyaan **typed*
 (`choice`, `score`, `noul`) atas state apa pun — teks, email, tiket, atau dokumen JSON —
 tanpa text generation, jadi tidak ada parsing dan tidak ada hallucination.
 
-| Halaman | URL |
-|---|---|
-| **Playground (live, API jalan)** | <https://laya-playground-jvrv57wjrcpp57-8000.app.github.dev> |
-| Dokumentasi (GitHub Pages, statis) | <https://adyoi.github.io/laya-playground/> |
+| Halaman | URL | Akses |
+|---|---|---|
+| **Playground (live, API jalan)** | <https://laya-playground-jvrv57wjrcpp57.github.dev> | Public ✅ |
+| Playground (port 8000, dev) | <https://laya-playground-jvrv57wjrcpp57-8000.app.github.dev> | Perlu login + akses codespace 🔒 |
+| Dokumentasi (GitHub Pages, statis) | <https://adyoi.github.io/laya-playground/> | Public ✅ |
 
 Playground butuh proses FastAPI di belakang, jadi tidak bisa hidup di GitHub Pages. Yang di
-hosting di Codespace dengan port 8000 dibuat `public`; dokumentasinya tetap|Pages supaya
-tetap hidup tanpa server.
+hosting di Codespace; **domain utama (`...github.dev`) dikonfigurasi public permanen**, port 8000
+default `private` setiap restart.
 
 > **Auto-stop.** Codespace ini punya *idle timeout* 30 menit. Setelah idle, GitHub
 > mematikannya dan URL publik ikut mati. Ada dua lapis perlindungan:
@@ -26,23 +27,20 @@ tetap hidup tanpa server.
 > 1. `postStartCommand` menjalankan `start.sh` setiap kali container hidup, dan
 >    `supervise.sh` menyalakan ulang aplikasi kalau prosesnya mati. Ini menutup crash dan
 >    restart container.
-> 2. Workflow `keep-alive.yml` memanggil endpoint `/health` tiap 15 menit. Kalau mati, ia
->    menyalakan codespace lagi lewat API dan menunggu sampai `/health` 200.
+> 2. Workflow `keep-alive.yml` memanggil endpoint `/health` tiap 15 menit **di domain utama
+>    dulu, fallback ke port 8000**. Kalau mati, ia menyalakan codespace lewat API dan
+>    menunggu sampai `/health` 200/302. Kalau port 8000 private, workflow **coba otomatis
+>    ubah ke public via `gh codespace ports visibility`** (butuh secret `GH_PAT_CODESPACE`
+>    dengan scope `codespace`).
 >
-> Yang **tidak** bisa ditutup workflow: setiap codespace di-*stop* lalu *start*, port 8000
-> kembali jadi `private`. GitHub mengelola itu lewat dev tunnels API
-> (`tunnels.api.visualstudio.com`), bukan REST API, jadi Actions tidak bisa mengaturnya.
-> Akibatnya setelah bangun dari tidur you'll sering melihat 404.
->
-> **Perbaikan manual** (beberapa detik):
+> **Perbaikan manual** (kalau auto gagal):
 >
 > ```powershell
 > gh codespace ports visibility -c laya-playground-jvrv57wjrcpp57 8000:public
 > ```
 >
-> Satu-satunya cara menutup celah ini sepenuhnya adalah mengubah *retention period* di
-> **Settings → Codespaces** dari "stop after idle" ke always-on. Itu berbayar, dan jauh lebih
-> murah daripada membiarkan mesin 4-core/16 GB menyala terus.
+> Catatan: **Port 8000 sekarang butuh login GitHub + akses codespace** (perubahan GitHub).
+> Untuk share ke orang lain, gunakan **domain utama** `https://laya-playground-jvrv57wjrcpp57.github.dev`.
 
 ## Identitas repo GitHub
 
