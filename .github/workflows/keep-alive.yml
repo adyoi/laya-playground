@@ -77,12 +77,12 @@ jobs:
           if gh codespace ports visibility -c "$CODESPACE_NAME" 8000:public 2>&1; then
             echo "Berhasil ubah port ke public"
           else
-            echo "Gagal ubah port (butuh PAT dengan scope 'codespace' di secret GH_PAT_CODESPACE)"
+            echo "Gagal ubah port (cek PAT scope 'codespace' di secret GH_PAT_CODESPACE)"
             echo "Jalankan manual: gh codespace ports visibility -c $CODESPACE_NAME 8000:public"
           fi
         env:
           CODESPACE_NAME: ${{ vars.CODESPACE_NAME }}
-          GH_TOKEN: ${{ secrets.GH_PAT_CODESPACE || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT_CODESPACE }}
 
       - name: Report private port
         if: steps.probe.outputs.alive == 'true' && steps.probe.outputs.visibility == 'private'
