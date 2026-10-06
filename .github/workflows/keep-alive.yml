@@ -17,27 +17,56 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Probe playground
+      - name: Probe playground (main domain first)
         id: probe
         run: |
           set -uo pipefail
-          code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$PLAYGROUND_URL/health" || echo 000)
-          echo "http=$code"
-          case "$code" in
-            200)
-              echo "alive=true" >> "$GITHUB_OUTPUT"
-              echo "visibility=public" >> "$GITHUB_OUTPUT"
-              ;;
-            302)
-              echo "alive=true" >> "$GITHUB_OUTPUT"
-              echo "visibility=private" >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-              echo "alive=false" >> "$GITHUB_OUTPUT"
-              ;;
-          esac
-        env:
-          PLAYGROUND_URL: ${{ vars.PLAYGROUND_URL }}
+          
+          # URLs to check in order of preference
+          MAIN_URL="https://laya-playground-jvrv57wjrcpp57.github.dev"
+          PORT_URL="https://laya-playground-jvrv57wjrcpp57-8000.app.github.dev"
+          
+          alive=false
+          visibility="unknown"
+          final_url=""
+          
+          # Try main domain first
+          echo "Mencoba domain utama: $MAIN_URL"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$MAIN_URL/health" || echo 000)
+          echo "Main domain http=$code"
+          
+          if [ "$code" = "200" ] || [ "$code" = "302" ]; then
+            alive=true
+            final_url="$MAIN_URL"
+            case "$code" in
+              200) visibility="public" ;;
+              302) visibility="private" ;;
+            esac
+          else
+            # Fallback to port 8000 domain
+            echo "Domain utama gagal, mencoba port 8000: $PORT_URL"
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$PORT_URL/health" || echo 000)
+            echo "Port 8000 http=$code"
+            
+            if [ "$code" = "200" ] || [ "$code" = "302" ]; then
+              alive=true
+              final_url="$PORT_URL"
+              case "$code" in
+                200) visibility="public" ;;
+                302) visibility="private" ;;
+              esac
+            fi
+          fi
+          
+          echo "alive=$alive" >> "$GITHUB_OUTPUT"
+          echo "visibility=$visibility" >> "$GITHUB_OUTPUT"
+          echo "final_url=$final_url" >> "$GITHUB_OUTPUT"
+          
+          if [ "$alive" = "true" ]; then
+            echo "Playground hidup di: $final_url"
+          else
+            echo "Playground mati"
+          fi
 
       - name: Report private port
         if: steps.probe.outputs.alive == 'true' && steps.probe.outputs.visibility == 'private'
@@ -64,12 +93,25 @@ jobs:
         if: steps.probe.outputs.alive == 'false'
         run: |
           set -uo pipefail
+          
+          MAIN_URL="https://laya-playground-jvrv57wjrcpp57.github.dev"
+          PORT_URL="https://laya-playground-jvrv57wjrcpp57-8000.app.github.dev"
+          
           for i in $(seq 1 18); do
             sleep 20
-            code=$(curl -s -o /dev/null -w '%{http_code}' -m 15 "$PLAYGROUND_URL/health" || echo 000)
-            echo "percobaan $i: http=$code"
+            
+            # Check both URLs
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 15 "$MAIN_URL/health" || echo 000)
+            echo "percobaan $i (main): http=$code"
             if [ "$code" = "200" ] || [ "$code" = "302" ]; then
-              echo "sudah hidup setelah $((i * 20)) detik"
+              echo "sudah hidup (main domain) setelah $((i * 20)) detik"
+              exit 0
+            fi
+            
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 15 "$PORT_URL/health" || echo 000)
+            echo "percobaan $i (port 8000): http=$code"
+            if [ "$code" = "200" ] || [ "$code" = "302" ]; then
+              echo "sudah hidup (port 8000) setelah $((i * 20)) detik"
               exit 0
             fi
           done
@@ -78,5 +120,4 @@ jobs:
           echo "perbaiki manual: gh codespace ports visibility -c $CODESPACE_NAME 8000:public" >&2
           exit 1
         env:
-          PLAYGROUND_URL: ${{ vars.PLAYGROUND_URL }}
           CODESPACE_NAME: ${{ vars.CODESPACE_NAME }}
