@@ -17,6 +17,14 @@ tanpa text generation, jadi tidak ada parsing dan tidak ada hallucination.
 | Playground (port 8000, dev) | <https://laya-playground-jvrv57wjrcpp57-8000.app.github.dev> | Perlu login + akses codespace 🔒 |
 | Dokumentasi (GitHub Pages, statis) | <https://adyoi.github.io/laya-playground/> | Public ✅ |
 
+**Cara pakai Playground:**
+1. Buka **domain utama** `https://laya-playground-jvrv57wjrcpp57.github.dev`
+2. Halaman web playground terbuka (UI + API di domain yang sama)
+3. Isi **State** (teks/JSON) + **Questions** (tipe: choice/score/noul + criteria)
+4. Klik **Run** → hasil muncul di bawah (answer + confidence + routing info)
+
+Tidak perlu install, clone, atau akses port 8000. Semua jalan di browser.
+
 Playground butuh proses FastAPI di belakang, jadi tidak bisa hidup di GitHub Pages. Yang di
 hosting di Codespace; **domain utama (`...github.dev`) dikonfigurasi public permanen**, port 8000
 default `private` setiap restart.
